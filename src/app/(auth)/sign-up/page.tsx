@@ -13,8 +13,10 @@ import { Label } from "@radix-ui/react-label";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-
-const page = () => {
+import { toast } from "sonner";
+import { ZodError } from "zod";
+import { useRouter } from "next/navigation";
+const Page = () => {
   const {
     register,
     handleSubmit,
@@ -22,8 +24,25 @@ const page = () => {
   } = useForm<TAuthCredentialsValidator>({
     resolver: zodResolver(AuthCredentialsValidator),
   });
+  const router = useRouter();
+  const { mutate, isLoading } = trpc.auth.createPayloadUser.useMutation({
+    onError: (err) => {
+      if (err.data?.code === "CONFLICT") {
+        toast.error("This email is already in use. Sign in instead.");
+        return;
+      }
 
-  const { mutate, isLoading } = trpc.auth.createPayloadUser.useMutation({});
+      if (err instanceof ZodError) {
+        toast.error(err.issues[0].message);
+        return;
+      }
+      toast.error("something went wrong. Please try again later.");
+    },
+    onSuccess: ({ sentToEmail }) => {
+      toast.success(`Verification email sent to ${sentToEmail}`);
+      router.push("/verify-email?to=" + sentToEmail);
+    },
+  });
 
   const onSubmit = ({ email, password }: TAuthCredentialsValidator) => {
     mutate({ email, password });
@@ -60,6 +79,11 @@ const page = () => {
                     })}
                     placeholder="you@example.com"
                   />
+                  {errors?.email && (
+                    <p className="text-sm text-red-500">
+                      {errors.email.message}
+                    </p>
+                  )}
                 </div>
                 <div className="grid gap-1 py-2">
                   <Label htmlFor="password">Password</Label>
@@ -71,6 +95,11 @@ const page = () => {
                     })}
                     placeholder="Your password"
                   />
+                  {errors?.password && (
+                    <p className="text-sm text-red-500">
+                      {errors.password.message}
+                    </p>
+                  )}
                 </div>
                 <Button>Sign up</Button>
               </div>
@@ -82,4 +111,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;
