@@ -1,3 +1,5 @@
+import React from "react";
+
 interface EmailTemplateProps {
   actionLabel: string;
   buttonText: string;
