@@ -26,7 +26,10 @@ const perks = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+
+  await fetch("http://fofofo-001-site1.btempurl.com/api/LandCountry").then(res => {console.log(res)})
+  
   return (
     <>
       <MaxWidthWrapper>
